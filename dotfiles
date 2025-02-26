@@ -1,131 +1,5 @@
-#!/bin/bash
-
-install_repositories() {
-  echo -e "\n📂 Cloning repositories..."
-  for repo in "${REPOS[@]}"; do
-    IFS=":" read -r protocol url path branch <<<"$repo"
-
-    if [ -z "$branch" ]; then
-      branch_flag=""
-    else
-      branch_flag="-b $branch"
-    fi
-
-    if [ ! -d "$path" ]; then
-      git clone --quiet $branch_flag "$protocol:$url" "$path"
-      echo "  ✅ Cloned $protocol:$url to $path ${branch_flag:+(branch: $branch)}"
-    else
-      echo "  🔄 Repo already exists at $path, skipping..."
-    fi
-  done
-}
-
-install_brew_package() {
-  echo -e "\n🍻 Installing brew packages..."
-  for tap_package in "${BREW[@]}"; do
-    IFS=":" read -r package tap <<<"$tap_package"
-    if [ -z "$tap" ]; then
-      echo "  ℹ️  No tap found for $package"
-    else
-      if ! brew tap | grep -q "$tap"; then
-        echo "  🔧 Tapping into $tap..."
-        brew tap "$tap"
-      fi
-    fi
-
-    if ! brew list "$package" &>/dev/null; then
-      echo "  🔧 Installing $package..."
-      brew install "$package"
-    else
-      echo "  ✅ $package is already installed."
-    fi
-  done
-}
-
-install_symlinks() {
-  echo -e "\n🔗 Creating symbolic links..."
-  for file_target in "${FILES_TARGETS[@]}"; do
-    IFS=":" read -r file target <<<"$file_target"
-    source_file="$PWD/$file"
-
-    if [ ! -e "$source_file" ]; then
-      echo "  ℹ️  Source file $source_file does not exist. Please ensure the file is in the current directory."
-    else
-      ln -sfn "$source_file" "$target"
-      echo "  ✅ Linked $file to $target"
-    fi
-  done
-}
-
-install() {
-  install_repositories
-  install_brew_package
-  install_symlinks
-
-  echo -e "\n🎉 Installing done!"
-}
-
-uninstall_repositories() {
-  echo -e "\n📂 Removing repositories..."
-  for repo in "${REPOS[@]}"; do
-    IFS=":" read -r protocol url path branch <<<"$repo"
-
-    if [ -d "$path" ]; then
-      rm -rf "$path"
-      echo "  ✅ Removed repository at $path"
-    else
-      echo "  ℹ️  No repository found at $path, skipping..."
-    fi
-  done
-}
-
-uninstall_brew_package() {
-  echo -e "\n🍻 Uninstalling brew packages..."
-  for tap_package in "${BREW[@]}"; do
-    IFS=":" read -r package tap <<<"$tap_package"
-
-    if brew list "$package" &>/dev/null; then
-      echo "  🔧 Uninstalling $package..."
-      brew uninstall "$package"
-    else
-      echo "  ℹ️  $package already uninstalled."
-    fi
-
-    if [ -z "$tap" ]; then
-      echo "  ℹ️  No tap found for $package"
-    else
-      if ! brew list | grep -q "$tap"; then
-        echo "  🔧 Untapping $tap..."
-        brew untap "$tap"
-      else
-        echo "  ❓ $tap is still in use by other packages."
-      fi
-    fi
-  done
-}
-
-uninstall_symlinks() {
-  echo -e "\n🛑 Removing symbolic links..."
-
-  for file_target in "${FILES_TARGETS[@]}"; do
-    IFS=":" read -r file target <<<"$file_target"
-
-    if [ -L "$target" ]; then
-      rm -f "$target"
-      echo "  ✅ Removed symlink for $file"
-    else
-      echo "  ℹ️  No symlink found for $file, skipping..."
-    fi
-  done
-}
-
-uninstall() {
-  uninstall_repositories
-  uninstall_brew_package
-  uninstall_symlinks
-
-  echo -e "\n🎉 Uninstalling done!"
-}
+# --------------------------
+# Configuration
 
 # "protocol:url:path:branch"
 REPOS=(
@@ -145,17 +19,320 @@ FILES_TARGETS=(
   ".zshrc:$HOME/.zshrc"
 )
 
-# Check for valid argument
-if [ $# -ne 1 ]; then
+# --------------------------
+# "Plugins"
+
+install_repositories() {
+  local protocol=$1
+  local url=$2
+  local path=$3
+  local branch=$4
+
+  if [ -z "$branch" ]; then
+    branch_flag=""
+  else
+    branch_flag="-b $branch"
+  fi
+
+  if [ ! -d "$path" ]; then
+    git clone --quiet $branch_flag "$protocol:$url" "$path" >/dev/null
+    echo "  ✅ cloned $protocol:$url to $path ${branch_flag:+(branch: $branch)}"
+  else
+    echo "  🔄 repo already exists at $path, skipping..."
+  fi
+}
+
+uninstall_repositories() {
+  local protocol=$1
+  local url=$2
+  local path=$3
+  local branch=$4
+
+  if [ -d "$path" ]; then
+    rm -rf "$path"
+    echo "  ✅ removed repository at $path"
+  else
+    echo "  ℹ️  no repository found at $path, skipping..."
+  fi
+}
+
+install_brew_package() {
+  local package=$1
+  local tap=$2
+
+  if [ -z "$tap" ]; then
+    echo "  ℹ️  no tap found for $package"
+  else
+    if ! brew tap | grep -q "$tap"; then
+      echo "  🔧 tapping into $tap..."
+      brew tap "$tap" >/dev/null
+    fi
+  fi
+
+  if ! brew list "$package" &>/dev/null; then
+    echo "  🔧 installing $package..."
+    brew install -q "$package" >/dev/null
+  else
+    echo "  ✅ $package is already installed."
+  fi
+}
+
+uninstall_brew_package() {
+  local package=$1
+  local tap=$2
+
+  if brew list "$package" &>/dev/null; then
+    echo "  🔧 uninstalling $package..."
+    brew uninstall -q "$package" >/dev/null
+  else
+    echo "  ℹ️  $package already uninstalled."
+  fi
+
+  if [ -z "$tap" ]; then
+    echo "  ℹ️  no tap found for $package"
+  else
+    if ! brew list | grep -q "$tap"; then
+      echo "  🔧 untapping $tap..."
+      brew untap "$tap" >/dev/null
+    else
+      echo "  ❓ $tap is still in use by other packages."
+    fi
+  fi
+}
+
+install_symlinks() {
+  local file=$1
+  local target=$2
+  local source_file="$PWD/$file"
+
+  if [ ! -e "$source_file" ]; then
+    echo "  ℹ️  source file $source_file does not exist. Please ensure the file is in the current directory."
+  else
+    ln -sfn "$source_file" "$target"
+    echo "  ✅ linked $file to $target"
+  fi
+}
+
+uninstall_symlinks() {
+  local file=$1
+  local target=$2
+
+  if [ -L "$target" ]; then
+    rm -f "$target"
+    echo "  ✅ removed symlink for $file"
+  else
+    echo "  ℹ️  no symlink found for $file, skipping..."
+  fi
+}
+
+# --------------------------
+# Main functions
+
+function install_all_repositories() {
+  echo ""
+  echo "📂 cloning repositories..."
+  for repo in "${REPOS[@]}"; do
+    IFS=":" read -r protocol url path branch <<<"$repo"
+    install_repositories "$protocol" "$url" "$path" "$branch"
+  done
+}
+
+function uninstall_all_repositories() {
+  echo ""
+  echo "📂 removing repositories..."
+  for repo in "${REPOS[@]}"; do
+    IFS=":" read -r protocol url path branch <<<"$repo"
+    uninstall_repositories "$protocol" "$url" "$path" "$branch"
+  done
+}
+
+function install_all_brew_packages() {
+  echo ""
+  echo "🍻 installing brew packages..."
+  for tap_package in "${BREW[@]}"; do
+    IFS=":" read -r package tap <<<"$tap_package"
+    install_brew_package "$package" "$tap"
+  done
+}
+
+function uninstall_all_brew_packages() {
+  echo ""
+  echo "🍻 uninstalling brew packages..."
+  for tap_package in "${BREW[@]}"; do
+    IFS=":" read -r package tap <<<"$tap_package"
+    uninstall_brew_package "$package" "$tap"
+  done
+}
+
+function install_all_symlinks() {
+  echo ""
+  echo "🔗 creating symlinks..."
+  for file_target in "${FILES_TARGETS[@]}"; do
+    IFS=":" read -r file target <<<"$file_target"
+    install_symlinks "$file" "$target"
+  done
+}
+
+function uninstall_all_symlinks() {
+  echo ""
+  echo "🛑 removing symlinks..."
+  for file_target in "${FILES_TARGETS[@]}"; do
+    IFS=":" read -r file target <<<"$file_target"
+    uninstall_symlinks "$file" "$target"
+  done
+}
+
+# --------------------------
+# Actual script starts here
+
+if [ $# -ne 1 ] || { [ "$1" != "install" ] && [ "$1" != "uninstall" ]; }; then
   echo "Usage: $0 {install|uninstall}"
   exit 1
 fi
 
-if [ "$1" == "install" ]; then
-  install
-elif [ "$1" == "uninstall" ]; then
-  uninstall
-else
-  echo "Invalid argument. Usage: $0 {install|uninstall}"
-  exit 1
-fi
+# --------------------------
+# Menu
+
+options=("repositories" "brew packages" "symlinks")
+selected=()
+
+cursorIndex=0
+
+display_menu() {
+  clear
+  echo ""
+  for index in "${!options[@]}"; do
+    selected_contains=false
+    for s in "${selected[@]}"; do
+      if [[ "$s" =~ ^[0-9]+$ ]] && [ "$s" -eq "$index" ]; then
+        selected_contains=true
+        break
+      fi
+    done
+
+    if [ "$index" -eq "$cursorIndex" ]; then
+      if $selected_contains; then
+        final_string="  \033[1;32m>\033[0m \033[1;32m${options[index]}\033[0m"
+      else
+        final_string="  \033[1;32m>\033[0m ${options[index]}"
+      fi
+    else
+      if $selected_contains; then
+        final_string="  \033[1;32m  ${options[index]}\033[0m"
+      else
+        final_string="    ${options[index]}"
+      fi
+    fi
+
+    echo "$final_string"
+
+  done
+
+  echo ""
+  echo "   [k] up  [l] down  [i] select  [q] quit  [enter] confirm"
+}
+
+while true; do
+  display_menu
+
+  read -rsn1 key
+  case "$key" in
+  'q')
+    exit 0
+    ;;
+
+  # k - move cursor up
+  k)
+    ((cursorIndex--))
+    if ((cursorIndex < 0)); then
+      cursorIndex=$((${#options[@]} - 1))
+    fi
+    ;;
+
+  # l - move cursor down
+  l)
+    ((cursorIndex++))
+    if ((cursorIndex >= ${#options[@]})); then
+      cursorIndex=0
+    fi
+    ;;
+
+  # i - select option
+  i)
+    selected_contains=false
+    for s in "${selected[@]}"; do
+      if [[ "$s" -eq "$cursorIndex" ]]; then
+        selected_contains=true
+        break
+      fi
+    done
+
+    if $selected_contains; then
+      # Remove from the selected array
+      selected=("${selected[@]/$cursorIndex/}")
+    else
+      # Add to the selected array
+      selected+=("$cursorIndex")
+    fi
+
+    # Filter out empty elements
+    filtered_selected=()
+    for s in "${selected[@]}"; do
+      if [[ -n "$s" ]]; then
+        filtered_selected+=("$s")
+      fi
+    done
+    selected=("${filtered_selected[@]}")
+    ;;
+
+    # Enter to confirm selection
+  "")
+    break
+    ;;
+  *) ;;
+
+  esac
+done
+
+sorted_selected=()
+# Sort the selected array in same order as the options array
+for i in "${!options[@]}"; do
+  for j in "${selected[@]}"; do
+    if [[ "$i" -eq "$j" ]]; then
+      sorted_selected+=("$i")
+    fi
+  done
+done
+
+for i in "${sorted_selected[@]}"; do
+  case $i in
+  0)
+
+    if [ "$1" == "install" ]; then
+      install_all_repositories
+    else
+      [ "$1" == "uninstall" ]
+      uninstall_all_repositories
+    fi
+    ;;
+  1)
+    if [ "$1" == "install" ]; then
+      install_all_brew_packages
+    else
+      [ "$1" == "uninstall" ]
+      uninstall_all_brew_packages
+    fi
+    ;;
+  2)
+    if [ "$1" == "install" ]; then
+      install_all_symlinks
+    else
+      [ "$1" == "uninstall" ]
+      uninstall_all_symlinks
+    fi
+    ;;
+  *)
+    echo "Invalid selection"
+    ;;
+  esac
+done
