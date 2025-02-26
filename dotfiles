@@ -1,43 +1,9 @@
 #!/bin/bash
 
-# Function to check and install brew packages
-install_brew_package() {
-  echo -e "\n🍻 Installing brew packages..."
-  local tap="$1"
-  local package="$2"
-
-  # Check if the tap is already added
-  if ! brew tap | grep -q "$tap"; then
-    echo "  🔧 Tapping into $tap..."
-    brew tap "$tap"
-  fi
-
-  # Check if the package is installed
-  if ! brew list "$package" &>/dev/null; then
-    echo "  🔧 Installing $package..."
-    brew install "$package"
-  else
-    echo "✅ $package is already installed."
-  fi
-}
-
-install() {
-  echo -e "\n🔗 Creating symbolic links..."
-  for file_target in "${FILES_TARGETS[@]}"; do
-    IFS=":" read -r file target <<< "$file_target"
-    source_file="$PWD/$file"
-
-    if [ ! -e "$source_file" ]; then
-      echo "  ❌ Source file $source_file does not exist. Please ensure the file is in the current directory."
-    else
-      ln -sfn "$source_file" "$target"
-      echo "  ✅ Linked $file to $target"
-    fi
-  done
-
+install_repositories() {
   echo -e "\n📂 Cloning repositories..."
   for repo in "${REPOS[@]}"; do
-    IFS=":" read -r protocol url path branch <<< "$repo"
+    IFS=":" read -r protocol url path branch <<<"$repo"
 
     if [ -z "$branch" ]; then
       branch_flag=""
@@ -52,30 +18,54 @@ install() {
       echo "  🔄 Repo already exists at $path, skipping..."
     fi
   done
-
-  # Install necessary brew packages
-  install_brew_package "arl/arl" "gitmux"
-
-  echo -e "\n🎉 Dotfiles and repositories setup complete!\n"
 }
 
-uninstall() {
-  echo -e "\n🛑 Removing symbolic links..."
-
-  for file_target in "${FILES_TARGETS[@]}"; do
-    IFS=":" read -r file target <<< "$file_target"
-
-    if [ -L "$target" ]; then
-      rm -f "$target"
-      echo "  ✅ Removed symlink for $file"
+install_brew_package() {
+  echo -e "\n🍻 Installing brew packages..."
+  for tap_package in "${BREW[@]}"; do
+    IFS=":" read -r tap package <<<"$tap_package"
+    # Check if the tap is already added
+    if ! brew tap | grep -q "$tap"; then
+      echo "  🔧 Tapping into $tap..."
+      brew tap "$tap"
+    fi
+    # Check if the package is installed
+    if ! brew list "$package" &>/dev/null; then
+      echo "  🔧 Installing $package..."
+      brew install "$package"
     else
-      echo "  ❌ No symlink found for $file, skipping..."
+      echo "  ✅ $package is already installed."
     fi
   done
+}
 
+install_symlinks() {
+  echo -e "\n🔗 Creating symbolic links..."
+  for file_target in "${FILES_TARGETS[@]}"; do
+    IFS=":" read -r file target <<<"$file_target"
+    source_file="$PWD/$file"
+
+    if [ ! -e "$source_file" ]; then
+      echo "  ❌ Source file $source_file does not exist. Please ensure the file is in the current directory."
+    else
+      ln -sfn "$source_file" "$target"
+      echo "  ✅ Linked $file to $target"
+    fi
+  done
+}
+
+install() {
+  install_repositories
+  install_brew_package
+  install_symlinks
+
+  echo -e "\n🎉 Installing done!"
+}
+
+uninstall_repositories() {
   echo -e "\n📂 Removing repositories..."
   for repo in "${REPOS[@]}"; do
-    IFS=":" read -r protocol url path branch <<< "$repo"
+    IFS=":" read -r protocol url path branch <<<"$repo"
 
     if [ -d "$path" ]; then
       rm -rf "$path"
@@ -84,14 +74,61 @@ uninstall() {
       echo "  ❌ No repository found at $path, skipping..."
     fi
   done
+}
 
-  echo -e "\n🎉 Dotfiles and repositories uninstalled!"
+uninstall_brew_package() {
+  echo -e "\n🍻 Uninstalling brew packages..."
+  for tap_package in "${BREW[@]}"; do
+    IFS=":" read -r tap package <<<"$tap_package"
+
+    if brew list "$package" &>/dev/null; then
+      echo "  🔧 Uninstalling $package..."
+      brew uninstall "$package"
+    else
+      echo "  ❌ $package already uninstalled."
+    fi
+
+    if ! brew list | grep -q "$tap"; then
+      echo "  🔧 Untapping $tap..."
+      brew untap "$tap"
+    else
+      echo "  ❓ $tap is still in use by other packages."
+    fi
+  done
+}
+
+uninstall_symlinks() {
+  echo -e "\n🛑 Removing symbolic links..."
+
+  for file_target in "${FILES_TARGETS[@]}"; do
+    IFS=":" read -r file target <<<"$file_target"
+
+    if [ -L "$target" ]; then
+      rm -f "$target"
+      echo "  ✅ Removed symlink for $file"
+    else
+      echo "  ❌ No symlink found for $file, skipping..."
+    fi
+  done
+}
+
+uninstall() {
+  uninstall_repositories
+  uninstall_brew_package
+  uninstall_symlinks
+
+  echo -e "\n🎉 Uninstalling done!"
 }
 
 # "protocol:url:path:branch"
 REPOS=(
   "https://github.com/tmux-plugins/tpm.git:$HOME/.tmux/plugins/tpm"
   "https://github.com/catppuccin/tmux.git:$HOME/.config/tmux/plugins/catppuccin/tmux:v2.1.2"
+)
+
+# "tap:package"
+BREW=(
+  "arl/arl:gitmux"
 )
 
 # "file:target"
