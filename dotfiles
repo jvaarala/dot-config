@@ -1,5 +1,26 @@
 #!/bin/bash
 
+# Function to check and install brew packages
+install_brew_package() {
+  echo -e "\n🍻 Installing brew packages..."
+  local tap="$1"
+  local package="$2"
+
+  # Check if the tap is already added
+  if ! brew tap | grep -q "$tap"; then
+    echo "  🔧 Tapping into $tap..."
+    brew tap "$tap"
+  fi
+
+  # Check if the package is installed
+  if ! brew list "$package" &>/dev/null; then
+    echo "  🔧 Installing $package..."
+    brew install "$package"
+  else
+    echo "✅ $package is already installed."
+  fi
+}
+
 install() {
   echo -e "\n🔗 Creating symbolic links..."
   for file_target in "${FILES_TARGETS[@]}"; do
@@ -31,6 +52,9 @@ install() {
       echo "  🔄 Repo already exists at $path, skipping..."
     fi
   done
+
+  # Install necessary brew packages
+  install_brew_package "arl/arl" "gitmux"
 
   echo -e "\n🎉 Dotfiles and repositories setup complete!\n"
 }
