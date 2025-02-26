@@ -23,13 +23,16 @@ install_repositories() {
 install_brew_package() {
   echo -e "\n🍻 Installing brew packages..."
   for tap_package in "${BREW[@]}"; do
-    IFS=":" read -r tap package <<<"$tap_package"
-    # Check if the tap is already added
-    if ! brew tap | grep -q "$tap"; then
-      echo "  🔧 Tapping into $tap..."
-      brew tap "$tap"
+    IFS=":" read -r package tap <<<"$tap_package"
+    if [ -z "$tap" ]; then
+      echo "  ℹ️  No tap found for $package"
+    else
+      if ! brew tap | grep -q "$tap"; then
+        echo "  🔧 Tapping into $tap..."
+        brew tap "$tap"
+      fi
     fi
-    # Check if the package is installed
+
     if ! brew list "$package" &>/dev/null; then
       echo "  🔧 Installing $package..."
       brew install "$package"
@@ -46,7 +49,7 @@ install_symlinks() {
     source_file="$PWD/$file"
 
     if [ ! -e "$source_file" ]; then
-      echo "  ❌ Source file $source_file does not exist. Please ensure the file is in the current directory."
+      echo "  ℹ️  Source file $source_file does not exist. Please ensure the file is in the current directory."
     else
       ln -sfn "$source_file" "$target"
       echo "  ✅ Linked $file to $target"
@@ -71,7 +74,7 @@ uninstall_repositories() {
       rm -rf "$path"
       echo "  ✅ Removed repository at $path"
     else
-      echo "  ❌ No repository found at $path, skipping..."
+      echo "  ℹ️  No repository found at $path, skipping..."
     fi
   done
 }
@@ -79,20 +82,24 @@ uninstall_repositories() {
 uninstall_brew_package() {
   echo -e "\n🍻 Uninstalling brew packages..."
   for tap_package in "${BREW[@]}"; do
-    IFS=":" read -r tap package <<<"$tap_package"
+    IFS=":" read -r package tap <<<"$tap_package"
 
     if brew list "$package" &>/dev/null; then
       echo "  🔧 Uninstalling $package..."
       brew uninstall "$package"
     else
-      echo "  ❌ $package already uninstalled."
+      echo "  ℹ️  $package already uninstalled."
     fi
 
-    if ! brew list | grep -q "$tap"; then
-      echo "  🔧 Untapping $tap..."
-      brew untap "$tap"
+    if [ -z "$tap" ]; then
+      echo "  ℹ️  No tap found for $package"
     else
-      echo "  ❓ $tap is still in use by other packages."
+      if ! brew list | grep -q "$tap"; then
+        echo "  🔧 Untapping $tap..."
+        brew untap "$tap"
+      else
+        echo "  ❓ $tap is still in use by other packages."
+      fi
     fi
   done
 }
@@ -107,7 +114,7 @@ uninstall_symlinks() {
       rm -f "$target"
       echo "  ✅ Removed symlink for $file"
     else
-      echo "  ❌ No symlink found for $file, skipping..."
+      echo "  ℹ️  No symlink found for $file, skipping..."
     fi
   done
 }
@@ -128,7 +135,8 @@ REPOS=(
 
 # "tap:package"
 BREW=(
-  "arl/arl:gitmux"
+  "tmux"
+  "gitmux:arl/arl"
 )
 
 # "file:target"
