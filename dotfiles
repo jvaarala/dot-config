@@ -1,0 +1,92 @@
+#!/bin/bash
+
+install() {
+  echo -e "\n🔗 Creating symbolic links..."
+  for file_target in "${FILES_TARGETS[@]}"; do
+    IFS=":" read -r file target <<< "$file_target"
+    source_file="$PWD/$file"
+
+    if [ ! -e "$source_file" ]; then
+      echo "  ❌ Source file $source_file does not exist. Please ensure the file is in the current directory."
+    else
+      ln -sfn "$source_file" "$target"
+      echo "  ✅ Linked $file to $target"
+    fi
+  done
+
+  echo -e "\n📂 Cloning repositories..."
+  for repo in "${REPOS[@]}"; do
+    IFS=":" read -r protocol url path branch <<< "$repo"
+
+    if [ -z "$branch" ]; then
+      branch_flag=""
+    else
+      branch_flag="-b $branch"
+    fi
+
+    if [ ! -d "$path" ]; then
+      git clone --quiet $branch_flag "$protocol:$url" "$path"
+      echo "  ✅ Cloned $protocol:$url to $path ${branch_flag:+(branch: $branch)}"
+    else
+      echo "  🔄 Repo already exists at $path, skipping..."
+    fi
+  done
+
+  echo -e "\n🎉 Dotfiles and repositories setup complete!\n"
+}
+
+uninstall() {
+  echo -e "\n🛑 Removing symbolic links..."
+
+  for file_target in "${FILES_TARGETS[@]}"; do
+    IFS=":" read -r file target <<< "$file_target"
+
+    if [ -L "$target" ]; then
+      rm -f "$target"
+      echo "  ✅ Removed symlink for $file"
+    else
+      echo "  ❌ No symlink found for $file, skipping..."
+    fi
+  done
+
+  echo -e "\n📂 Removing repositories..."
+  for repo in "${REPOS[@]}"; do
+    IFS=":" read -r protocol url path branch <<< "$repo"
+
+    if [ -d "$path" ]; then
+      rm -rf "$path"
+      echo "  ✅ Removed repository at $path"
+    else
+      echo "  ❌ No repository found at $path, skipping..."
+    fi
+  done
+
+  echo -e "\n🎉 Dotfiles and repositories uninstalled!"
+}
+
+# "protocol:url:path:branch"
+REPOS=(
+  "https://github.com/tmux-plugins/tpm.git:$HOME/.tmux/plugins/tpm"
+  "https://github.com/catppuccin/tmux.git:$HOME/.config/tmux/plugins/catppuccin/tmux:v2.1.2"
+)
+
+# "file:target"
+FILES_TARGETS=(
+  ".tmux.conf:$HOME/.tmux.conf"
+  ".zshrc:$HOME/.zshrc"
+)
+
+# Check for valid argument
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 {install|uninstall}"
+  exit 1
+fi
+
+if [ "$1" == "install" ]; then
+  install
+elif [ "$1" == "uninstall" ]; then
+  uninstall
+else
+  echo "Invalid argument. Usage: $0 {install|uninstall}"
+  exit 1
+fi
