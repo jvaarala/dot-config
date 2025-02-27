@@ -1,0 +1,13 @@
+source "./adapters/symlink"
+
+install_zshrc() {
+  echo ""
+  echo "🔧 Setting up .zshrc configuration..."
+  install_symlink ".zshrc" "$HOME/.zshrc"
+}
+
+uninstall_zshrc() {
+  echo ""
+  echo "🗑️ Removing .zshrc configuration..."
+  uninstall_symlink ".zshrc" "$HOME/.zshrc"
+}

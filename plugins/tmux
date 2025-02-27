@@ -1,0 +1,36 @@
+source "./adapters/brew_package"
+source "./adapters/repository"
+source "./adapters/symlink"
+
+# "source|path"
+REPOS=(
+  "https://github.com/tmux-plugins/tpm.git|$HOME/.tmux/plugins/tpm"
+  "-b v2.1.2 https://github.com/catppuccin/tmux.git|$HOME/.config/tmux/plugins/catppuccin/tmux"
+)
+CSV_REPOS=$(
+  IFS=';'
+  echo "${REPOS[*]}"
+)
+
+
+# "tap|package"
+BREW=(
+  "tmux"
+  "gitmux|arl/arl"
+)
+CSV_BREW=$(
+  IFS=';'
+  echo "${BREW[*]}"
+)
+
+install_tmux() {
+  install_repositories "${CSV_REPOS[*]}"
+  install_brew_packages "${CSV_BREW[*]}"
+  install_symlink ".tmux.conf" "$HOME/.tmux.conf"
+}
+
+uninstall_tmux() {
+  uninstall_repositories "${CSV_REPOS[*]}"
+  uninstall_brew_packages "${CSV_BREW[*]}"
+  uninstall_symlink ".tmux.conf" "$HOME/.tmux.conf"
+}

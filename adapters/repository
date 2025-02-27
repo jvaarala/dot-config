@@ -1,0 +1,43 @@
+install_repository() {
+  local source=$1
+  local path=$2
+
+  if [ ! -d "$path" ]; then
+    git clone -q $source "$path"
+    echo "  ✅ cloned $source to $path "
+  else
+    echo "  🔄 repo already exists at $path, skipping..."
+  fi
+}
+
+uninstall_repository() {
+  local source=$1
+  local path=$2
+
+  if [ -d "$path" ]; then
+    rm -rf "$path"
+    echo "  ✅ removed repository at $path"
+  else
+    echo "  ℹ️  no repository found at $path, skipping..."
+  fi
+}
+
+function install_repositories() {
+  IFS=';' read -r -a REPOS <<< "$1"
+  echo ""
+  echo "📂 cloning repositories..."
+  for repo in "${REPOS[@]}"; do
+    IFS="|" read -r source path <<<"$repo"
+    install_repository "$source" "$path"
+  done
+}
+
+function uninstall_repositories() {
+  IFS=';' read -r -a REPOS <<< "$1"
+  echo ""
+  echo "📂 removing repositories..."
+  for repo in "${REPOS[@]}"; do
+    IFS="|" read -r source path <<<"$repo"
+    uninstall_repository "$source" "$path"
+  done
+}

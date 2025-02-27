@@ -1,30 +1,72 @@
 
 # dot-config
 
-This repository contains configuration files and a script called `dotfiles` for managing my config setup.
+This script helps manage your configuration files and related installations.
 
-## Setup
+![Visual demo](https://github.com/jvaarala/dot-config/blob/main/resources/visual_demo.gif)
 
-Remember the proper executable permissions.
+## Prerequisites
+
 
 ```bash
-chmod +x dotfiles
+git clone https://github.com/jvaarala/dot-config.git
+cd dot-config
+chmod +x dotconfig
 ```
+
 
 ## Usage
 
-To install the dotfiles, run:
+The script supports three main operations: `install`, `uninstall`, and `create`.
 
-```bash
-./dotfiles install
+### Install
+
+To install the selected plugins and configurations, run:
+
+```sh
+./dotconfig install
 ```
-This will copy the configuration files to their appropriate locations in your home directory.
 
-Uninstall dotfiles
-To uninstall the dotfiles, run:
+### Uninstall
+To uninstall the selected plugins and configurations, run:
 
-```bash
-./dotfiles uninstall
+```sh
+./dotconfig uninstall
 ```
-This will remove the configuration files from your home directory.
+
+### Menu Navigation
+When you run the script with install or uninstall, you will be presented with a menu to select the plugins you want to manage.  
+- Use `k` to move the cursor up.
+- Use `l` to move the cursor down.
+- Use `i` to select or deselect an option.
+- Use `q` to quit the menu.
+- Press `Enter` to confirm your selection.
+
+
+## Plugin Structure
+To add a new plugin, create a new file in the plugins directory and define the install_<plugin_name> and uninstall_<plugin_name> functions.
+
+Each plugin should have two functions: `install_<plugin_name>` and `uninstall_<plugin_name>`. These functions will be called by the script to manage the plugin.  
+The plugin name should be in lowercase and separated by underscores.
+
+### Create
+There is also a `create` command to help you create a new plugin template.
+To create a new plugin template, run:
+```sh
+./dotconfig create "foo bar"
+```
+
+This will create a new plugin template in the `plugins` directory with the name `foo_bar`. You can then add your configurations and installation steps to the plugin.
+
+```sh
+install_foo_bar() {
+  echo "Installing contents of example plugin..."
+  # Add installation commands here
+}
+
+uninstall_foo_bar() {
+  echo "Uninstalling contents of example plugin..."
+  # Add uninstallation commands here
+}
+```
 
