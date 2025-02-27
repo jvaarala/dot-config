@@ -1,0 +1,23 @@
+install_repository() {
+  local source=$1
+  local path=$2
+
+  if [ ! -d "$path" ]; then
+    git clone -q $source "$path"
+    echo "  ✅ cloned $source to $path "
+  else
+    echo "  🔄 repo already exists at $path, skipping..."
+  fi
+}
+
+uninstall_repository() {
+  local source=$1
+  local path=$2
+
+  if [ -d "$path" ]; then
+    rm -rf "$path"
+    echo "  ✅ removed repository at $path"
+  else
+    echo "  ℹ️  no repository found at $path, skipping..."
+  fi
+}

@@ -1,186 +1,14 @@
 # --------------------------
-# Configuration
-
-# "protocol:url:path:branch"
-REPOS=(
-  "https://github.com/tmux-plugins/tpm.git:$HOME/.tmux/plugins/tpm"
-  "https://github.com/catppuccin/tmux.git:$HOME/.config/tmux/plugins/catppuccin/tmux:v2.1.2"
-)
-
-# "tap:package"
-BREW=(
-  "tmux"
-  "gitmux:arl/arl"
-)
-
-# "file:target"
-FILES_TARGETS=(
-  ".tmux.conf:$HOME/.tmux.conf"
-  ".zshrc:$HOME/.zshrc"
-)
-
-# --------------------------
-# "Plugins"
-
-install_repositories() {
-  local protocol=$1
-  local url=$2
-  local path=$3
-  local branch=$4
-
-  if [ -z "$branch" ]; then
-    branch_flag=""
-  else
-    branch_flag="-b $branch"
+# "plugins"
+options=()
+for file in "./plugins"/*; do
+  if [ -f "$file" ]; then
+    # shellcheck source=./plugins
+    source "$file"
+        filename=$(basename "$file")
+        options+=("${filename%.*}")
   fi
-
-  if [ ! -d "$path" ]; then
-    git clone --quiet $branch_flag "$protocol:$url" "$path" >/dev/null
-    echo "  ✅ cloned $protocol:$url to $path ${branch_flag:+(branch: $branch)}"
-  else
-    echo "  🔄 repo already exists at $path, skipping..."
-  fi
-}
-
-uninstall_repositories() {
-  local protocol=$1
-  local url=$2
-  local path=$3
-  local branch=$4
-
-  if [ -d "$path" ]; then
-    rm -rf "$path"
-    echo "  ✅ removed repository at $path"
-  else
-    echo "  ℹ️  no repository found at $path, skipping..."
-  fi
-}
-
-install_brew_package() {
-  local package=$1
-  local tap=$2
-
-  if [ -z "$tap" ]; then
-    echo "  ℹ️  no tap found for $package"
-  else
-    if ! brew tap | grep -q "$tap"; then
-      echo "  🔧 tapping into $tap..."
-      brew tap "$tap" >/dev/null
-    fi
-  fi
-
-  if ! brew list "$package" &>/dev/null; then
-    echo "  🔧 installing $package..."
-    brew install -q "$package" >/dev/null
-  else
-    echo "  ✅ $package is already installed."
-  fi
-}
-
-uninstall_brew_package() {
-  local package=$1
-  local tap=$2
-
-  if brew list "$package" &>/dev/null; then
-    echo "  🔧 uninstalling $package..."
-    brew uninstall -q "$package" >/dev/null
-  else
-    echo "  ℹ️  $package already uninstalled."
-  fi
-
-  if [ -z "$tap" ]; then
-    echo "  ℹ️  no tap found for $package"
-  else
-    if ! brew list | grep -q "$tap"; then
-      echo "  🔧 untapping $tap..."
-      brew untap "$tap" >/dev/null
-    else
-      echo "  ❓ $tap is still in use by other packages."
-    fi
-  fi
-}
-
-install_symlinks() {
-  local file=$1
-  local target=$2
-  local source_file="$PWD/$file"
-
-  if [ ! -e "$source_file" ]; then
-    echo "  ℹ️  source file $source_file does not exist. Please ensure the file is in the current directory."
-  else
-    ln -sfn "$source_file" "$target"
-    echo "  ✅ linked $file to $target"
-  fi
-}
-
-uninstall_symlinks() {
-  local file=$1
-  local target=$2
-
-  if [ -L "$target" ]; then
-    rm -f "$target"
-    echo "  ✅ removed symlink for $file"
-  else
-    echo "  ℹ️  no symlink found for $file, skipping..."
-  fi
-}
-
-# --------------------------
-# Main functions
-
-function install_all_repositories() {
-  echo ""
-  echo "📂 cloning repositories..."
-  for repo in "${REPOS[@]}"; do
-    IFS=":" read -r protocol url path branch <<<"$repo"
-    install_repositories "$protocol" "$url" "$path" "$branch"
-  done
-}
-
-function uninstall_all_repositories() {
-  echo ""
-  echo "📂 removing repositories..."
-  for repo in "${REPOS[@]}"; do
-    IFS=":" read -r protocol url path branch <<<"$repo"
-    uninstall_repositories "$protocol" "$url" "$path" "$branch"
-  done
-}
-
-function install_all_brew_packages() {
-  echo ""
-  echo "🍻 installing brew packages..."
-  for tap_package in "${BREW[@]}"; do
-    IFS=":" read -r package tap <<<"$tap_package"
-    install_brew_package "$package" "$tap"
-  done
-}
-
-function uninstall_all_brew_packages() {
-  echo ""
-  echo "🍻 uninstalling brew packages..."
-  for tap_package in "${BREW[@]}"; do
-    IFS=":" read -r package tap <<<"$tap_package"
-    uninstall_brew_package "$package" "$tap"
-  done
-}
-
-function install_all_symlinks() {
-  echo ""
-  echo "🔗 creating symlinks..."
-  for file_target in "${FILES_TARGETS[@]}"; do
-    IFS=":" read -r file target <<<"$file_target"
-    install_symlinks "$file" "$target"
-  done
-}
-
-function uninstall_all_symlinks() {
-  echo ""
-  echo "🛑 removing symlinks..."
-  for file_target in "${FILES_TARGETS[@]}"; do
-    IFS=":" read -r file target <<<"$file_target"
-    uninstall_symlinks "$file" "$target"
-  done
-}
+done
 
 # --------------------------
 # Actual script starts here
@@ -193,7 +21,6 @@ fi
 # --------------------------
 # Menu
 
-options=("repositories" "brew packages" "symlinks")
 selected=()
 
 cursorIndex=0
@@ -305,34 +132,10 @@ for i in "${!options[@]}"; do
 done
 
 for i in "${sorted_selected[@]}"; do
-  case $i in
-  0)
-
-    if [ "$1" == "install" ]; then
-      install_all_repositories
-    else
-      [ "$1" == "uninstall" ]
-      uninstall_all_repositories
-    fi
-    ;;
-  1)
-    if [ "$1" == "install" ]; then
-      install_all_brew_packages
-    else
-      [ "$1" == "uninstall" ]
-      uninstall_all_brew_packages
-    fi
-    ;;
-  2)
-    if [ "$1" == "install" ]; then
-      install_all_symlinks
-    else
-      [ "$1" == "uninstall" ]
-      uninstall_all_symlinks
-    fi
-    ;;
-  *)
-    echo "Invalid selection"
-    ;;
-  esac
+  function_name="${1}_${options[i]}"
+  if declare -f "$function_name" > /dev/null; then
+    eval "$function_name"
+  else
+    echo "Function $function_name not found"
+  fi
 done

@@ -1,0 +1,25 @@
+source "./adaptors/symlink"
+
+# "file|target"
+FILES_TARGETS=(
+  ".tmux.conf|$HOME/.tmux.conf"
+  ".zshrc|$HOME/.zshrc"
+)
+
+function install_symlinks() {
+  echo ""
+  echo "🔗 creating symlinks..."
+  for file_target in "${FILES_TARGETS[@]}"; do
+    IFS="|" read -r file target <<<"$file_target"
+    install_symlink "$file" "$target"
+  done
+}
+
+function uninstall_symlinks() {
+  echo ""
+  echo "🛑 removing symlinks..."
+  for file_target in "${FILES_TARGETS[@]}"; do
+    IFS="|" read -r file target <<<"$file_target"
+    uninstall_symlink "$file" "$target"
+  done
+}

@@ -1,0 +1,25 @@
+source "./adaptors/repository"
+
+# "source|path"
+REPOS=(
+  "https://github.com/tmux-plugins/tpm.git|$HOME/.tmux/plugins/tpm"
+  "-b v2.1.2 https://github.com/catppuccin/tmux.git|$HOME/.config/tmux/plugins/catppuccin/tmux"
+)
+
+function install_repositories() {
+  echo ""
+  echo "📂 cloning repositories..."
+  for repo in "${REPOS[@]}"; do
+    IFS="|" read -r source path <<<"$repo"
+    install_repository "$source" "$path"
+  done
+}
+
+function uninstall_repositories() {
+  echo ""
+  echo "📂 removing repositories..."
+  for repo in "${REPOS[@]}"; do
+    IFS="|" read -r source path <<<"$repo"
+    uninstall_repository "$source" "$path"
+  done
+}

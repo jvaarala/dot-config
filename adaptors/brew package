@@ -1,0 +1,43 @@
+install_brew_package() {
+  local package=$1
+  local tap=$2
+
+  if [ -z "$tap" ]; then
+    echo "  ℹ️  no tap found for $package"
+  else
+    if ! brew tap | grep -q "$tap"; then
+      echo "  🔧 tapping into $tap..."
+      brew tap "$tap" >/dev/null
+    fi
+  fi
+
+  if ! brew list "$package" &>/dev/null; then
+    echo "  🔧 installing $package..."
+    brew install -q "$package" >/dev/null
+  else
+    echo "  ✅ $package is already installed."
+  fi
+}
+
+uninstall_brew_package() {
+  local package=$1
+  local tap=$2
+
+  if brew list "$package" &>/dev/null; then
+    echo "  🔧 uninstalling $package..."
+    brew uninstall -q "$package" >/dev/null
+  else
+    echo "  ℹ️  $package already uninstalled."
+  fi
+
+  if [ -z "$tap" ]; then
+    echo "  ℹ️  no tap found for $package"
+  else
+    if ! brew list | grep -q "$tap"; then
+      echo "  🔧 untapping $tap..."
+      brew untap "$tap" >/dev/null
+    else
+      echo "  ❓ $tap is still in use by other packages."
+    fi
+  fi
+}
