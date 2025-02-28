@@ -7,7 +7,7 @@ install_brew_package() {
   else
     if ! brew tap | grep -q "$tap"; then
       echo "  🔧 tapping into $tap..."
-      brew tap "$tap" >/dev/null
+      brew tap -q "$tap" >/dev/null
     fi
   fi
 
@@ -35,7 +35,7 @@ uninstall_brew_package() {
   else
     if ! brew list | grep -q "$tap"; then
       echo "  🔧 untapping $tap..."
-      brew untap "$tap" >/dev/null
+      brew untap -q "$tap" >/dev/null
     else
       echo "  ❓ $tap is still in use by other packages."
     fi
