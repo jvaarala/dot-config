@@ -1,17 +1,17 @@
-
-# dot-config
+Yeah, we all love em. Managers. But have you heard of..
+# SHCMANAGER
 
 This script helps manage your configuration files and related installations.
 
-![Visual demo](https://github.com/jvaarala/dot-config/blob/main/resources/visual_demo.gif)
+![Visual demo](https://github.com/jvaarala/shcmanager/blob/main/resources/visual_demo.gif)
 
 ## Prerequisites
 
 
 ```bash
-git clone https://github.com/jvaarala/dot-config.git
-cd dot-config
-chmod +x dotconfig
+git clone https://github.com/jvaarala/shcmanager.git
+cd shcmanager
+chmod +x shcmanager
 ```
 
 
@@ -24,14 +24,14 @@ The script supports three main operations: `install`, `uninstall`, and `create`.
 To install the selected plugins and configurations, run:
 
 ```sh
-./dotconfig install
+./shcmanager install
 ```
 
 ### Uninstall
 To uninstall the selected plugins and configurations, run:
 
 ```sh
-./dotconfig uninstall
+./shcmanager uninstall
 ```
 
 ### Menu Navigation
@@ -53,7 +53,7 @@ The plugin name should be in lowercase and separated by underscores.
 There is also a `create` command to help you create a new plugin template.
 To create a new plugin template, run:
 ```sh
-./dotconfig create "foo bar"
+./shcmanager create "foo bar"
 ```
 
 This will create a new plugin template in the `plugins` directory with the name `foo_bar`. You can then add your configurations and installation steps to the plugin.
