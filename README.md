@@ -44,7 +44,7 @@ When you run the script with install or uninstall, you will be presented with a 
 
 
 ## Plugins
-At the core of the shcmanager are plugins. Each plugin is a set of configurations and installation steps that can be installed or uninstalled with the shcmanager.
+At the core of the shcmanager are plugins. Each plugin is a set of configurations and (un)installation steps that can be managed by the shcmanager.
 
 Each plugin should have two functions: `install_<plugin_name>` and `uninstall_<plugin_name>`. These functions will be called by the script to manage the plugin.  
 The plugin name should be in lowercase and separated by underscores.
