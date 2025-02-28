@@ -43,11 +43,16 @@ When you run the script with install or uninstall, you will be presented with a 
 - Press `Enter` to confirm your selection.
 
 
-## Plugin Structure
-To add a new plugin, create a new file in the plugins directory and define the install_<plugin_name> and uninstall_<plugin_name> functions.
+## Plugins
+At the core of the shcmanager are plugins. Each plugin is a set of configurations and installation steps that can be installed or uninstalled with the shcmanager.
 
 Each plugin should have two functions: `install_<plugin_name>` and `uninstall_<plugin_name>`. These functions will be called by the script to manage the plugin.  
 The plugin name should be in lowercase and separated by underscores.
+
+To add a new plugin, create a new file in the plugins directory and define the `install_<plugin_name>` and `install_<plugin_name>` functions.
+
+You can use the available adapters in plugins to perform common operations like clone a git repository, install brew packages, or create symlinks.
+
 
 ### Create
 There is also a `create` command to help you create a new plugin template.
