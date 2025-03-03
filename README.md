@@ -1,12 +1,15 @@
-Yeah, we all love em. Managers. But have you heard of:
 
+
+Yeah, we all love 'em — managers. But have you heard of:
 # SHCMANAGER
 
-This script helps manage your configuration files and related installations.
+This script helps you manage configuration files and related installations.
 
 ![Visual demo](https://github.com/jvaarala/shcmanager/blob/main/resources/visual_demo.gif)
 
 ## Prerequisites
+
+Clone the repository and set up the script:
 
 ```bash
 git clone https://github.com/jvaarala/shcmanager.git
@@ -14,55 +17,60 @@ cd shcmanager
 chmod +x shcmanager
 ```
 
-The script uses a configuration file `.shcmanager.config` to set the working directory.
+The script uses a configuration file, `.shcmanager.config`, to define the working directory.  
 If the config file is not found, the script will prompt you to create one.
 
-Example `.shcmanager.config`:
+### Example `.shcmanager.config`
 
 ```
 WORK_DIR=~/managed
 ```
 
-This working directory will be used to store the managed configurations and plugins.
+This working directory stores managed configurations and plugins.  
+If you set `WORK_DIR` to a Git repository, you get automatic backups and version control for your configurations, making it easy to manage them across multiple machines.
 
 ## Menu Navigation
 
-When you run the script with install or uninstall, you will be presented with a menu to select the plugins you want to
-manage.
-
-- Use `k` to move the cursor up.
-- Use `l` to move the cursor down.
-- Use `i` to select or deselect an option.
-- Use `q` to quit the menu.
+- Press `k` to move the cursor up.
+- Press `l` to move the cursor down.
+- Press `i` to select or deselect an option.
+- Press `q` to quit the menu.
 - Press `Enter` to confirm your selection.
 
 ## Plugins
 
-Core idea of `shcmanager` revolves around plugins. Plugins are used to manage configurations and installations of
-different tools and applications.
-Each plugin is a set of configuration and (un)installation steps that can be managed by the `shcmanager`.
+The core idea of **hcmanager** revolves around **plugins**, which manage the configurations and installations of different tools and applications.  
+Each plugin contains configuration and (un)installation steps that **shcmanager** can handle.
 
-Each plugin should have two functions: `install_<plugin_name>` and `uninstall_<plugin_name>`. These functions will be
-called by the script to manage the plugin.  
-The plugin name should be in lowercase and separated by underscores.
+A plugin should define two functions:
 
-To add a new plugin, create a new file in the plugins directory and define the `install_<plugin_name>` and
-`install_<plugin_name>` functions.
+- `install_<plugin_name>`
+- `uninstall_<plugin_name>`
 
-You can use the available adapters in plugins to perform common operations like clone a git repository, install brew
-packages, or create symlinks.
+These functions are called by the script to manage the plugin.  
+The plugin name should be in lowercase and use underscores (`_`) as separators.
 
-### Create
+### Creating a Plugin
 
-There is also a `create` command to help you create a new plugin template.
+To add a new plugin, create a file in the `plugins` directory and define the required `install_<plugin_name>` and `uninstall_<plugin_name>` functions.
+
+You can use the available **adapters** to perform common tasks, such as:
+
+- Cloning Git repositories
+- Installing Homebrew packages
+- Creating symlinks
+
+### Using the `create` Command
+
+`shcmanager` includes a `create` command to generate a new plugin template.  
 To create a new plugin template, run:
 
 ```bash
 ./shcmanager create "foo bar"
 ```
 
-This will create a new plugin template in the `plugins` directory with the name `foo_bar`. You can then add your
-configurations and installation steps to the plugin.
+This creates a new plugin template in the `plugins` directory as `foo_bar`.  
+You can then add your configurations and installation steps to the plugin.
 
 ```bash
 install_foo_bar() {
@@ -74,31 +82,40 @@ uninstall_foo_bar() {
   echo ""
   echo "Uninstalling foo_bar..."
 }
-
 ```
 
-### Example
+### Example: Managing `.zshrc`
 
-To set up the IntelliJ IDEA keymap plugin, you can use the following commands:
+You can create a plugin for each configuration file you want to manage.  
+For example, to manage your `.zshrc` file:
 
-1. Create the Plugin:
-    ```bash
-    ./shcmanager create zshrc
-    ```
-2. Edit the Plugin: Update the `plugins/zshrc` file with the appropriate install and uninstall functions:
-    ```bash
+1. **Create the Plugin:**
+   ```bash
+   ./shcmanager create zshrc
+   ```
+2. **Edit the Plugin:** Update `plugins/zshrc` with the following content:
+   ```bash
    source "./adapters/symlink"
-   
+
    install_zshrc() {
       echo ""
       echo "🔧 Setting up .zshrc configuration..."
       install_symlink "$HOME/managed/.zshrc" "$HOME/.zshrc"
    }
-   
+
    uninstall_zshrc() {
       echo ""
       echo "🗑️ Removing .zshrc configuration..."
       uninstall_symlink "$HOME/managed/.zshrc" "$HOME/.zshrc"
    }
    ```
+3. **Move the `.zshrc` file to the managed directory:**
+   ```bash
+   mv ~/.zshrc ~/managed/.zshrc
+   ```
+4. **Run the script:**
+   ```bash
+   ./shcmanager
+   ```
+   The `zshrc` plugin should now appear in the menu.
 
