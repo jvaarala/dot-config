@@ -3,7 +3,7 @@ install_repository() {
   local path=$2
 
   if [ ! -d "$path" ]; then
-    git clone -q $source "$path"
+    git clone -q $source "$path" 2>&1 | sed 's/^/    /'
     echo "  ✅ cloned $source to $path "
   else
     echo "  🔄 repo already exists at $path, skipping..."
@@ -23,7 +23,7 @@ uninstall_repository() {
 }
 
 function install_repositories() {
-  IFS=';' read -r -a REPOS <<< "$1"
+  IFS=';' read -r -a REPOS <<<"$1"
   echo ""
   echo "📂 cloning repositories..."
   for repo in "${REPOS[@]}"; do
@@ -33,7 +33,7 @@ function install_repositories() {
 }
 
 function uninstall_repositories() {
-  IFS=';' read -r -a REPOS <<< "$1"
+  IFS=';' read -r -a REPOS <<<"$1"
   echo ""
   echo "📂 removing repositories..."
   for repo in "${REPOS[@]}"; do

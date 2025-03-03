@@ -13,7 +13,7 @@ install_brew_package() {
 
   if ! brew list "$package" &>/dev/null; then
     echo "  🔧 installing $package..."
-    brew install -q "$package" >/dev/null
+    brew install -q "$package" 2>&1 | sed 's/^/    /'
   else
     echo "  ✅ $package is already installed."
   fi
@@ -25,7 +25,7 @@ uninstall_brew_package() {
 
   if brew list "$package" &>/dev/null; then
     echo "  🔧 uninstalling $package..."
-    brew uninstall -q "$package" >/dev/null
+    brew uninstall -q "$package" 2>&1 | sed 's/^/    /'
   else
     echo "  ℹ️  $package already uninstalled."
   fi
@@ -35,7 +35,7 @@ uninstall_brew_package() {
   else
     if ! brew list | grep -q "$tap"; then
       echo "  🔧 untapping $tap..."
-      brew untap -q "$tap" >/dev/null
+      brew untap -q "$tap" 2>&1 | sed 's/^/    /'
     else
       echo "  ❓ $tap is still in use by other packages."
     fi
@@ -43,7 +43,7 @@ uninstall_brew_package() {
 }
 
 function install_brew_packages() {
-  IFS=';' read -r -a BREW <<< "$1"
+  IFS=';' read -r -a BREW <<<"$1"
   echo ""
   echo "🍻 installing brew packages..."
   for tap_package in "${BREW[@]}"; do
@@ -53,7 +53,7 @@ function install_brew_packages() {
 }
 
 function uninstall_brew_packages() {
-  IFS=';' read -r -a BREW <<< "$1"
+  IFS=';' read -r -a BREW <<<"$1"
   echo ""
   echo "🍻 uninstalling brew packages..."
   for tap_package in "${BREW[@]}"; do

@@ -12,8 +12,8 @@ done
 
 # --------------------------
 # Actual script starts here
-if [ $# -lt 1 ] || { [ "$1" != "install" ] && [ "$1" != "uninstall" ] && [ "$1" != "create" ]; } || { [ "$1" = "create" ] && [ $# -ne 2 ]; }; then
-  echo "Usage: $0 {install|uninstall|create <string>}"
+if [ $# -ne 0 ] || { [ "$1" = "create" ] && [ $# -ne 2 ]; }; then
+  echo "Usage: $0 [create <plugin_name>]"
   exit 1
 elif [ "$1" = "create" ]; then
 
@@ -38,7 +38,8 @@ fi
 # --------------------------
 # Menu
 
-selected=()
+selectedForInstall=()
+selectedForUninstall=()
 
 cursorIndex=0
 
@@ -46,23 +47,34 @@ display_menu() {
   clear
   echo ""
   for index in "${!options[@]}"; do
-    selected_contains=false
-    for s in "${selected[@]}"; do
+    selectedForInstall_contains=false
+    selectedForUninstall_contains=false
+    for s in "${selectedForInstall[@]}"; do
       if [[ "$s" =~ ^[0-9]+$ ]] && [ "$s" -eq "$index" ]; then
-        selected_contains=true
+        selectedForInstall_contains=true
+        break
+      fi
+    done
+    for s in "${selectedForUninstall[@]}"; do
+      if [[ "$s" =~ ^[0-9]+$ ]] && [ "$s" -eq "$index" ]; then
+        selectedForUninstall_contains=true
         break
       fi
     done
 
     if [ "$index" -eq "$cursorIndex" ]; then
-      if $selected_contains; then
+      if $selectedForInstall_contains; then
         final_string="  \033[1;32m>\033[0m \033[1;32m${options[index]}\033[0m"
+      elif $selectedForUninstall_contains; then
+        final_string="  \033[1;31m>\033[0m \033[1;31m${options[index]}\033[0m"
       else
         final_string="  \033[1;32m>\033[0m ${options[index]}"
       fi
     else
-      if $selected_contains; then
+      if $selectedForInstall_contains; then
         final_string="  \033[1;32m  ${options[index]}\033[0m"
+      elif $selectedForUninstall_contains; then
+        final_string="  \033[1;31m  ${options[index]}\033[0m"
       else
         final_string="    ${options[index]}"
       fi
@@ -73,7 +85,7 @@ display_menu() {
   done
 
   echo ""
-  echo "   [k] up  [l] down  [i] select  [q] quit  [enter] confirm"
+  echo "   [k] up  [l] down  [i] select [u] uninstall  [q] quit  [enter] confirm"
 }
 
 while true; do
@@ -103,30 +115,62 @@ while true; do
 
   # i - select option
   i)
-    selected_contains=false
-    for s in "${selected[@]}"; do
+    selectedForInstall_contains=false
+    for s in "${selectedForInstall[@]}"; do
       if [[ "$s" -eq "$cursorIndex" ]]; then
-        selected_contains=true
+        selectedForInstall_contains=true
         break
       fi
     done
 
-    if $selected_contains; then
-      # Remove from the selected array
-      selected=("${selected[@]/$cursorIndex/}")
+    if $selectedForInstall_contains; then
+      # Remove from the selectedForInstall array
+      selectedForInstall=("${selectedForInstall[@]/$cursorIndex/}")
     else
-      # Add to the selected array
-      selected+=("$cursorIndex")
+      # Add to the selectedForInstall array
+      selectedForInstall+=("$cursorIndex")
+      # Remove from the selectedForUninstall array if present
+      selectedForUninstall=("${selectedForUninstall[@]/$cursorIndex/}")
     fi
 
     # Filter out empty elements
-    filtered_selected=()
-    for s in "${selected[@]}"; do
+    filtered_selectedForInstall=()
+    for s in "${selectedForInstall[@]}"; do
       if [[ -n "$s" ]]; then
-        filtered_selected+=("$s")
+        filtered_selectedForInstall+=("$s")
       fi
     done
-    selected=("${filtered_selected[@]}")
+    selectedForInstall=("${filtered_selectedForInstall[@]}")
+    ;;
+
+  # u - select option
+  u)
+    selectedForUninstall_contains=false
+    for s in "${selectedForUninstall[@]}"; do
+      if [[ "$s" -eq "$cursorIndex" ]]; then
+        selectedForUninstall_contains=true
+        break
+      fi
+    done
+
+    if $selectedForUninstall_contains; then
+      # Remove from the selectedForUninstall array
+      selectedForUninstall=("${selectedForUninstall[@]/$cursorIndex/}")
+    else
+      # Add to the selectedForUninstall array
+      selectedForUninstall+=("$cursorIndex")
+      # Remove from the selectedForInstall array if present
+      selectedForInstall=("${selectedForInstall[@]/$cursorIndex/}")
+    fi
+
+    # Filter out empty elements
+    filtered_selectedForUninstall=()
+    for s in "${selectedForUninstall[@]}"; do
+      if [[ -n "$s" ]]; then
+        filtered_selectedForUninstall+=("$s")
+      fi
+    done
+    selectedForUninstall=("${filtered_selectedForUninstall[@]}")
     ;;
 
     # Enter to confirm selection
@@ -138,21 +182,45 @@ while true; do
   esac
 done
 
-sorted_selected=()
-# Sort the selected array in same order as the options array
+# Sort the arrays in same order as the options array
+sorted_selectedForInstall=()
 for i in "${!options[@]}"; do
-  for j in "${selected[@]}"; do
+  for j in "${selectedForInstall[@]}"; do
     if [[ "$i" -eq "$j" ]]; then
-      sorted_selected+=("$i")
+      sorted_selectedForInstall+=("$i")
     fi
   done
 done
 
-for i in "${sorted_selected[@]}"; do
-  function_name="${1}_${options[i]}"
+sorted_selectedForUninstall=()
+for i in "${!options[@]}"; do
+  for j in "${selectedForUninstall[@]}"; do
+    if [[ "$i" -eq "$j" ]]; then
+      sorted_selectedForUninstall+=("$i")
+    fi
+  done
+done
+
+# --------------------------
+# Install and uninstall
+for i in "${sorted_selectedForInstall[@]}"; do
+  function_name="install_${options[i]}"
   if declare -f "$function_name" >/dev/null; then
     eval "$function_name"
   else
     echo "Function $function_name not found"
   fi
 done
+
+for i in "${sorted_selectedForUninstall[@]}"; do
+  function_name="uninstall_${options[i]}"
+  if declare -f "$function_name" >/dev/null; then
+    eval "$function_name"
+  else
+    echo "Function $function_name not found"
+  fi
+done
+
+echo ""
+echo "🎉 It's all shcmanaged!"
+echo ""
