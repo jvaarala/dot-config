@@ -3,7 +3,10 @@
 Yeah, we all love 'em — managers. But have you heard of:
 # SHCMANAGER
 
-This script helps you manage configuration files and related installations.
+The `shcmanager` is a shell script-based manager designed to simplify the management of environment configurations.
+It allows users to create and use plugins through a user-friendly command-line interface.
+The core idea is to provide a streamlined way to handle various environment configurations and tasks by organizing them into manageable plugins.
+Plugins can do anything that can be done with shell scripts. Each plugin must define two methods: `install` and `uninstall`, which are used to specify the setup and teardown phases, respectively.
 
 ![Visual demo](https://github.com/jvaarala/shcmanager/blob/main/resources/visual_demo.gif)
 
@@ -69,7 +72,7 @@ To create a new plugin template, run:
 ./shcmanager create "foo bar"
 ```
 
-This creates a new plugin template in the `plugins` directory as `foo_bar`.  
+This creates a new plugin template in the `WORK_DIR/plugins` directory as `foo_bar`.  
 You can then add your configurations and installation steps to the plugin.
 
 ```bash
