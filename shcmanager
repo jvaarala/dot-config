@@ -1,53 +1,83 @@
-# --------------------------
-# Load configuration
-config_file=".shcmanager.config"
-work_dir=""
-plugin_dir=""
-
-if [ -f "$config_file" ]; then
-  while IFS='=' read -r key value; do
-    if [ "$key" = "WORK_DIR" ]; then
-      work_dir=$(eval echo "$value")
-      break
-    fi
-  done <"$config_file"
-else
-  echo "Config file not found!"
-  read -p "Press Enter to continue..."
-fi
-
-if [ -n "$work_dir" ]; then
-  plugin_dir="$work_dir/plugins"
-else
-  echo "WORK_DIR not found in config file!"
-  read -p "Press Enter to continue..."
-fi
+# shcmanager
 
 # --------------------------
-# Actual script starts here
+# Usage
 if [ $# -ne 0 ] && [ "$1" != "create" ]; then
   echo "Usage: $0 [create <plugin_name>]"
   exit 1
 elif [ "$1" = "create" ] && [ $# -ne 2 ]; then
   echo "Usage: $0 [create <plugin_name>]"
   exit 1
-elif [ "$1" = "create" ]; then
+fi
 
+# --------------------------
+# Load configuration
+config_file=".shcmanager.config"
+work_dir=""
+plugin_dir=""
+
+yellow_warning="\033[1;33m⚠\033[0m"
+red_x="\033[1;31mⅹ\033[0m"
+green_ok="\033[1;32m✓\033[0m"
+
+red_text() {
+  local text="$1"
+  local s="\033[0;31m${text}\033[0m"
+  echo "$s"
+}
+
+green_text() {
+  local text="$1"
+  local s="\033[0;32m${text}\033[0m"
+  echo "$s"
+}
+
+if [ ! -f "$config_file" ]; then
+  echo "$yellow_warning Config file not found at $config_file"
+  read -p "Do you want to create the config file? (y/n): " create_config
+  if [ "$create_config" = "y" ]; then
+    read -p "Enter the location for WORK_DIR: " wd
+    echo "WORK_DIR=$wd" >"$config_file"
+    echo "$green_ok Config file created at $config_file"
+    work_dir=$(eval echo "$wd")
+  else
+    echo "$red_x Config file creation aborted. You need to create the config file ($config_file) and set WORK_DIR to proceed."
+    exit 1
+  fi
+else
+  while IFS='=' read -r key value; do
+    if [ "$key" = "WORK_DIR" ]; then
+      work_dir=$(eval echo "$value")
+      break
+    fi
+  done <"$config_file"
+fi
+
+if [ -n "$work_dir" ]; then
+  plugin_dir="$work_dir/plugins"
+else
+  echo "$yellow_warning WORK_DIR not found in config file!"
+  exit 1
+fi
+
+if [ "$1" = "create" ]; then
   input_string="$2"
   filename=$(echo "$input_string" | tr ' ' '_')
   file_path="$plugin_dir/$filename"
 
   cat <<EOL >"$file_path"
 install_$filename() {
+  echo ""
   echo "Installing $filename..."
 }
 
 uninstall_$filename() {
+  echo ""
   echo "Uninstalling $filename..."
 }
 EOL
 
-  echo "Plugin template created at $file_path"
+  echo "$green_ok Plugin template created at $file_path"
   exit 1
 fi
 
@@ -56,7 +86,7 @@ fi
 options=()
 for file in "$plugin_dir"/*; do
   if [ -f "$file" ]; then
-    # shellcheck source=./plugins
+    # shellcheck source=/dev/null
     source "$file"
     filename=$(basename "$file")
     options+=("${filename%.*}")
@@ -90,26 +120,28 @@ display_menu() {
       fi
     done
 
+    spacer="     "
+    spacer_with_cursor="  ~> "
+
     if [ "$index" -eq "$cursorIndex" ]; then
       if $selectedForInstall_contains; then
-        final_string="  > \033[1;32m${options[index]}\033[0m"
+        final_string="$spacer_with_cursor$(green_text "${options[index]}") $green_ok"
       elif $selectedForUninstall_contains; then
-        final_string="  > \033[1;31m${options[index]}\033[0m"
+        final_string="$spacer_with_cursor$(red_text "${options[index]}") $red_x"
       else
-        final_string="  > ${options[index]}"
+        final_string="$spacer_with_cursor${options[index]}"
       fi
     else
       if $selectedForInstall_contains; then
-        final_string="  \033[1;32m  ${options[index]}\033[0m"
+        final_string="$spacer$(green_text "${options[index]}") $green_ok"
       elif $selectedForUninstall_contains; then
-        final_string="  \033[1;31m  ${options[index]}\033[0m"
+        final_string="$spacer$(red_text "${options[index]}") $red_x"
       else
-        final_string="    ${options[index]}"
+        final_string="$spacer${options[index]}"
       fi
     fi
 
     echo "${final_string//_/ }"
-
   done
 
   echo ""
@@ -121,7 +153,8 @@ while true; do
 
   read -rsn1 key
   case "$key" in
-  'q')
+  q)
+    clear
     exit 0
     ;;
 
@@ -229,6 +262,7 @@ for i in "${!options[@]}"; do
   done
 done
 
+clear
 # --------------------------
 # Install and uninstall
 for i in "${sorted_selectedForInstall[@]}"; do
@@ -250,5 +284,5 @@ for i in "${sorted_selectedForUninstall[@]}"; do
 done
 
 echo ""
-echo "🎉 It's all shcmanaged!"
+echo "$green_ok It's all shcmanaged!"
 echo ""
