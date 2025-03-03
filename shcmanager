@@ -61,6 +61,10 @@ if [ "$1" = "create" ]; then
   filename=$(echo "$input_string" | tr ' ' '_')
   file_path="$plugin_dir/$filename"
 
+  if [ ! -d "$plugin_dir" ]; then
+    mkdir -p "$plugin_dir"
+  fi
+
   cat <<EOL >"$file_path"
 install_$filename() {
   echo ""
