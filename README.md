@@ -42,7 +42,7 @@ If you set `WORK_DIR` to a Git repository, you get automatic backups and version
 
 ## Plugins
 
-The core idea of **hcmanager** revolves around **plugins**, which manage the configurations and installations of different tools and applications.  
+The core idea of **shcmanager** revolves around **plugins**, which manage the configurations and installations of different tools and applications.  
 Each plugin contains configuration and (un)installation steps that **shcmanager** can handle.
 
 A plugin should define two functions:
