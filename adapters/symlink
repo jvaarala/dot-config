@@ -3,6 +3,7 @@ install_symlink() {
   local target=$2
   local source_file="$file"
 
+  echo ""
   if [ ! -e "$source_file" ]; then
     echo "  ℹ️  source file $source_file does not exist. Please ensure the file is in the current directory."
   else
@@ -15,6 +16,7 @@ uninstall_symlink() {
   local file=$1
   local target=$2
 
+  echo ""
   if [ -L "$target" ]; then
     rm -f "$target"
     echo "  ✅ removed symlink for $file"
@@ -24,7 +26,7 @@ uninstall_symlink() {
 }
 
 function install_symlinks() {
-  IFS=';' read -r -a FILES_TARGETS <<< "$1"
+  IFS=';' read -r -a FILES_TARGETS <<<"$1"
   echo ""
   echo "🔗 creating symlinks..."
   for file_target in "${FILES_TARGETS[@]}"; do
@@ -34,7 +36,7 @@ function install_symlinks() {
 }
 
 function uninstall_symlinks() {
-  IFS=';' read -r -a FILES_TARGETS <<< "$1"
+  IFS=';' read -r -a FILES_TARGETS <<<"$1"
   echo ""
   echo "🛑 removing symlinks..."
   for file_target in "${FILES_TARGETS[@]}"; do
